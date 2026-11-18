@@ -1,0 +1,118 @@
+{
+  "name": "RO-EduASR",
+  "version": "1.1",
+  "created_at": "2026-11-11T12:36:00",
+  "description": "Corpus audio/video educațional în limba română (lecții de matematică, clasa a 4-a) colectat din tezaurul național, pentru antrenarea și evaluarea modelelor de recunoaștere a vorbirii. Transcrierile sunt automate (pseudo-etichete RobinASR), cu un subset de test corectat manual.",
+  "task": "automatic-speech-recognition",
+  "languages": [
+    "ro"
+  ],
+  "domain": "educație / matematică",
+  "sources": [
+    {
+      "id": "SRC-01",
+      "name": "EducațieOnline.md — clasa a 4-a, Matematică (lecții video, YouTube)",
+      "url": "https://educatieonline.md/Video?class=4&discipline=6",
+      "files": 45,
+      "recordings_hours": 10.299,
+      "speech_segments": 3758,
+      "speech_hours": 8.582,
+      "speakers": 11
+    },
+    {
+      "id": "SRC-02",
+      "name": "Google Drive — materiale video furnizate în enunțul lucrării",
+      "url": "https://drive.google.com/drive/folders/1-7Zvo4p4ilABJVmT5izZrkpyT1P6Slvm",
+      "files": 30,
+      "recordings_hours": 19.453,
+      "speech_segments": 4942,
+      "speech_hours": 18.65,
+      "speakers": 30
+    }
+  ],
+  "audio_specs": {
+    "sampling_rate_hz": 16000,
+    "channels": 1,
+    "format": "WAV PCM 16-bit",
+    "segment_length_s": [
+      1.0,
+      20.0
+    ]
+  },
+  "collection": {
+    "SRC-01": "linkuri YouTube listate pe educatieonline.md (audio descărcat cu yt-dlp)",
+    "SRC-02": "folder Google Drive public din enunț (gdown)",
+    "SRC-03": "fișiere adăugate manual (opțional)"
+  },
+  "preprocessing": {
+    "extract": "ffmpeg -> WAV mono 16 kHz PCM16",
+    "vad": "silero (Silero VAD)",
+    "segmentation": "1.0–20.0 s; pauze <0.6s unite",
+    "dedup": "md5 pe PCM16 al segmentului",
+    "text_normalization": "lowercase, ş/ţ->ș/ț, cifre și simboluri -> litere (num2words ro), doar a-z ă â î ș ț spațiu"
+  },
+  "transcription": {
+    "method": "pseudo-etichete automate; test: subset corectat manual",
+    "labelers": {
+      "hf:openai/whisper-small": 300
+    },
+    "segments_labeled": 300,
+    "segments_usable": 299,
+    "segments_flagged": {
+      "chars_per_sec": 1
+    }
+  },
+  "splits": {
+    "policy": "pe vorbitor (profesor) / înregistrare — fără scurgeri de date între seturi",
+    "train": {
+      "segments": 233,
+      "hours": 0.706,
+      "speakers": 34,
+      "sources": {
+        "SRC-02": 119,
+        "SRC-01": 114
+      }
+    },
+    "dev": {
+      "segments": 28,
+      "hours": 0.103,
+      "speakers": 5,
+      "sources": {
+        "SRC-02": 28
+      }
+    },
+    "test": {
+      "segments": 38,
+      "hours": 0.097,
+      "speakers": 2,
+      "sources": {
+        "SRC-02": 9,
+        "SRC-01": 29
+      }
+    }
+  },
+  "manual_validation": {
+    "selected": 30,
+    "decisions": {},
+    "validated_in_test": 0
+  },
+  "statistics": {
+    "recordings": 75,
+    "recordings_hours": 29.752,
+    "size_gb": 20.715,
+    "speech_segments": 8700,
+    "speech_hours": 27.232
+  },
+  "rights_and_ethics": [
+    "Conținutul aparține autorilor/publicatorilor originali (lecții publicate pe educatieonline.md și YouTube). Corpusul se folosește exclusiv în scop didactic/de cercetare; nu se redistribuie.",
+    "Datele conțin voci ale unor profesori identificabili; nu se publică nume în setul derivat.",
+    "Licența sursei SRC-02 (Google Drive) nu este documentată în enunț — de confirmat înainte de orice publicare."
+  ],
+  "limitations": [
+    "Domeniu îngust (matematică clasa a 4-a): vocabular specific, fără vorbire spontană.",
+    "Etichetele de antrenare sunt automate (Robin) — modelul poate învăța și erorile acestuia.",
+    "Număr mic de vorbitori (profesori) -> generalizare limitată la alte voci/accente.",
+    "Zgomot/muzică de fundal în unele lecții; VAD poate tăia sau păstra greșit unele pasaje.",
+    "Cifrele sunt transcrise literal (ex. 25 -> douăzeci și cinci); modelul nu produce cifre."
+  ]
+}

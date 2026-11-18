@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ASR Română — Recunoaștere Vorbire</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:       #0D1B2A;
+  --panel:    #1A2A3A;
+  --panel2:   #223040;
+  --border:   #2A3D52;
+  --accent:   #38BDF8;
+  --accent2:  #0EA5E9;
+  --success:  #34D399;
+  --warn:     #FBBF24;
+  --error:    #F87171;
+  --text:     #E2E8F0;
+  --muted:    #7A92A8;
+  --mono:     'JetBrains Mono', monospace;
+  --sans:     'Space Grotesk', sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;font-size:15px;}
+
+/* ── Header ── */
+header{padding:24px 32px 0;border-bottom:1px solid var(--border);}
+.header-inner{display:flex;align-items:center;gap:16px;max-width:1100px;margin:0 auto;}
+.logo{width:44px;height:44px;flex-shrink:0;}
+.logo-title h1{font-size:20px;font-weight:700;letter-spacing:-0.3px;}
+.logo-title p{font-size:12px;color:var(--muted);margin-top:2px;}
+.header-wave{flex:1;height:44px;overflow:hidden;margin:0 8px;}
+.header-tabs{display:flex;gap:0;margin-top:16px;max-width:1100px;margin-left:auto;margin-right:auto;}
+.tab-btn{padding:10px 20px;background:none;border:none;border-bottom:2px solid transparent;
+  color:var(--muted);cursor:pointer;font-family:var(--sans);font-size:14px;font-weight:500;
+  transition:.15s;}
+.tab-btn.active{color:var(--accent);border-color:var(--accent);}
+.tab-btn:hover:not(.active){color:var(--text);}
+
+/* ── Main ── */
+main{max-width:1100px;margin:0 auto;padding:28px 32px;}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+@media(max-width:760px){.grid{grid-template-columns:1fr;}}
+
+/* ── Panels ── */
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px;}
+.panel h2{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--muted);margin-bottom:16px;}
+
+/* ── Upload Zone ── */
+.drop-zone{border:2px dashed var(--border);border-radius:10px;padding:36px 20px;
+  text-align:center;cursor:pointer;transition:.2s;position:relative;}
+.drop-zone.drag{border-color:var(--accent);background:rgba(56,189,248,.06);}
+.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0;}
+.drop-icon{font-size:36px;margin-bottom:10px;}
+.drop-zone p{font-size:14px;color:var(--muted);}
+.drop-zone strong{color:var(--accent);}
+
+/* ── Audio Player ── */
+.player-area{margin-top:16px;display:none;}
+.player-area.show{display:block;}
+audio{width:100%;margin-bottom:12px;accent-color:var(--accent);}
+.file-info{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);
+  background:var(--panel2);border-radius:8px;padding:10px 14px;}
+.file-info .fname{color:var(--text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* ── Waveform canvas ── */
+canvas#waveCanvas{width:100%;height:56px;border-radius:8px;background:var(--panel2);
+  display:block;margin-top:10px;}
+
+/* ── Config ── */
+.input-group{margin-bottom:14px;}
+.input-group label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:500;}
+.input-group input, .input-group select{
+  width:100%;background:var(--panel2);border:1px solid var(--border);
+  border-radius:8px;padding:9px 13px;color:var(--text);font-family:var(--sans);font-size:14px;
+  outline:none;transition:.15s;}
+.input-group input:focus,.input-group select:focus{border-color:var(--accent);}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:8px;
+  font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer;
+  border:none;transition:.15s;}
+.btn-primary{background:var(--accent);color:#0D1B2A;}
+.btn-primary:hover{background:var(--accent2);}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;}
+.btn-ghost{background:var(--panel2);color:var(--text);border:1px solid var(--border);}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
+.btn-success{background:var(--success);color:#0D1B2A;}
+.btn-group{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;}
+
+/* ── Spinner ── */
+.spinner{width:18px;height:18px;border:2px solid rgba(13,27,42,.3);
+  border-top-color:#0D1B2A;border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Transcription area ── */
+.transcription-box{font-family:var(--mono);font-size:14px;line-height:1.7;
+  background:var(--panel2);border:1px solid var(--border);border-radius:10px;
+  padding:16px;min-height:180px;width:100%;color:var(--text);resize:vertical;
+  outline:none;transition:.15s;}
+.transcription-box:focus{border-color:var(--accent);}
+.transcription-box::placeholder{color:var(--muted);}
+
+/* ── Metrics ── */
+.metrics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px;}
+.metric-card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;
+  padding:14px;text-align:center;}
+.metric-card .val{font-size:26px;font-weight:700;font-family:var(--mono);}
+.metric-card .lbl{font-size:11px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.05em;}
+.wer-color{color:var(--success);}
+.cer-color{color:var(--accent);}
+.rtf-color{color:var(--warn);}
+
+/* ── History tab ── */
+.history-table{width:100%;border-collapse:collapse;}
+.history-table th,.history-table td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);}
+.history-table th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);}
+.history-table td{font-size:13px;}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
+.badge-ok{background:rgba(52,211,153,.15);color:var(--success);}
+.badge-err{background:rgba(248,113,113,.15);color:var(--error);}
+
+/* ── Status bar ── */
+.status-bar{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;
+  font-size:13px;margin-top:14px;display:none;}
+.status-bar.show{display:flex;}
+.status-bar.info{background:rgba(56,189,248,.1);color:var(--accent);border:1px solid rgba(56,189,248,.2);}
+.status-bar.success{background:rgba(52,211,153,.1);color:var(--success);border:1px solid rgba(52,211,153,.2);}
+.status-bar.error{background:rgba(248,113,113,.1);color:var(--error);border:1px solid rgba(248,113,113,.2);}
+
+/* ── Tabs content ── */
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+
+/* ── Validation ── */
+.val-card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:14px;}
+.val-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.val-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;}
+.progress-bar{height:6px;background:var(--panel2);border-radius:3px;overflow:hidden;margin-bottom:20px;}
+.progress-fill{height:100%;background:var(--accent);border-radius:3px;transition:.3s;}
+
+/* ── adăugiri v1.1 ── */
+.metrics-grid{grid-template-columns:repeat(4,1fr);}
+@media(max-width:560px){.metrics-grid{grid-template-columns:repeat(2,1fr);}}
+.metric-card .val{font-size:22px;}
+.seg-list{margin-top:14px;max-height:220px;overflow:auto;border:1px solid var(--border);border-radius:10px;}
+.seg{display:flex;gap:12px;padding:8px 12px;border-bottom:1px solid var(--border);cursor:pointer;font-size:13px;line-height:1.5;}
+.seg:last-child{border-bottom:none}.seg:hover{background:var(--panel2);}
+.seg .t{font-family:var(--mono);color:var(--accent);flex-shrink:0;font-size:12px;padding-top:1px;}
+.ref-box{min-height:70px;margin-top:8px;}
+.pre{font-family:var(--mono);font-size:12px;line-height:1.6;background:var(--panel2);border:1px solid var(--border);
+  border-radius:10px;padding:14px;white-space:pre-wrap;max-height:340px;overflow:auto;margin-top:12px;}
+.val-card audio{margin-bottom:10px;}
+.hint{font-size:12px;color:var(--muted);line-height:1.6;}
+.btn:focus-visible,.tab-btn:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <svg class="logo" viewBox="0 0 44 44" fill="none" aria-hidden="true">
+      <rect width="44" height="44" rx="10" fill="#38BDF8" fill-opacity=".15"/>
+      <path d="M8 32 Q14 14 22 22 Q30 30 36 12" stroke="#38BDF8" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <circle cx="22" cy="22" r="3" fill="#38BDF8"/>
+    </svg>
+    <div class="logo-title">
+      <h1>ASR Română</h1>
+      <p>Recunoaștere automată a vorbirii · Tezaurul Național</p>
+    </div>
+    <div class="header-wave"><canvas id="headerWave" style="width:100%;height:44px;display:block;"></canvas></div>
+  </div>
+  <div class="header-tabs" role="tablist">
+    <button class="tab-btn active" data-tab="transcribe">🎙 Transcriere</button>
+    <button class="tab-btn" data-tab="validate">✅ Validare Manuală</button>
+    <button class="tab-btn" data-tab="history">📋 Istoric</button>
+    <button class="tab-btn" data-tab="settings">⚙️ Setări</button>
+  </div>
+</header>
+
+<main>
+
+<!-- ─── TRANSCRIERE ─────────────────────────────────── -->
+<div id="tab-transcribe" class="tab-content active">
+  <div class="grid">
+    <div>
+      <div class="panel">
+        <h2>📁 Fișier Audio / Video</h2>
+        <div class="drop-zone" id="dropZone">
+          <input type="file" id="fileInput" accept="audio/*,video/*,.mkv,.webm"/>
+          <div class="drop-icon">🎵</div>
+          <p>Trageți fișierul sau <strong>faceți click</strong></p>
+          <p style="margin-top:6px;font-size:12px;">MP4, MKV, WebM, WAV, MP3, OGG — serverul extrage audio cu ffmpeg</p>
+        </div>
+        <div class="player-area" id="playerArea">
+          <div class="file-info"><span>🗂</span><span class="fname" id="fileName">—</span>
+            <span id="fileDur" style="margin-left:auto;flex-shrink:0;"></span></div>
+          <canvas id="waveCanvas" height="56"></canvas>
+          <audio id="audioPlayer" controls style="width:100%;margin-top:10px;"></audio>
+        </div>
+        <div style="margin-top:16px;">
+          <h2>🎤 Înregistrare directă</h2>
+          <div class="btn-group" style="margin-top:0;">
+            <button class="btn btn-ghost" id="btnRec">⏺ Pornire înregistrare</button>
+            <span id="recTimer" style="font-family:var(--mono);color:var(--warn);align-self:center;display:none;">00:00</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <h2>📝 Transcriere</h2>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+          <div class="input-group" style="margin:0;flex:2;min-width:200px;"><label for="engineSel">Motor</label>
+            <select id="engineSel">
+              <option value="auto">Automat (local dacă există, altfel Robin)</option>
+              <option value="local">Model local antrenat</option>
+              <option value="robin">RobinASR (prin server)</option>
+              <option value="whisper">Whisper (descărcat la prima utilizare; lent pe CPU)</option>
+            </select></div>
+          <div class="input-group" style="margin:0;flex:1;min-width:130px;"><label for="langSel">Limbă</label>
+            <select id="langSel"><option value="ro">Română</option><option value="ru">Rusă</option></select></div>
+        </div>
+        <textarea class="transcription-box" id="transcriptionBox" placeholder="Transcrierea va apărea aici după procesare..."></textarea>
+        <div class="btn-group">
+          <button class="btn btn-primary" id="btnTranscribe" disabled>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1v14M4 8l4-4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            Transcrie
+          </button>
+          <button class="btn btn-ghost" id="btnCopy">📋 Copiați</button>
+          <button class="btn btn-ghost" id="btnTxt">⬇ .txt</button>
+          <button class="btn btn-ghost" id="btnClear">🗑 Șterge</button>
+        </div>
+        <div class="status-bar" id="statusBar" role="status"></div>
+        <div class="seg-list" id="segList" style="display:none"></div>
+      </div>
+
+      <div class="panel" style="margin-top:20px;">
+        <h2>📊 Metrici</h2>
+        <div class="metrics-grid">
+          <div class="metric-card"><div class="val wer-color" id="metWer">—</div><div class="lbl">WER</div></div>
+          <div class="metric-card"><div class="val cer-color" id="metCer">—</div><div class="lbl">CER</div></div>
+          <div class="metric-card"><div class="val" id="metWords">—</div><div class="lbl">Cuvinte</div></div>
+          <div class="metric-card"><div class="val rtf-color" id="metRtf">—</div><div class="lbl">RTF</div></div>
+        </div>
+        <p class="hint" style="margin-top:12px;" id="metInfo">WER/CER se calculează doar dacă introduceți mai jos textul corect (referința). RTF = timp procesare / durată audio (&lt; 1 = mai rapid decât timpul real).</p>
+        <label class="hint" for="refBox" style="display:block;margin-top:10px;">Text de referință (opțional):</label>
+        <textarea class="transcription-box ref-box" id="refBox" placeholder="Lipiți aici transcrierea corectă pentru a calcula WER / CER..."></textarea>
+        <div class="btn-group" style="margin-top:10px;"><button class="btn btn-ghost" id="btnScore">Calculează WER / CER</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── VALIDARE ────────────────────────────────────── -->
+<div id="tab-validate" class="tab-content">
+  <div class="panel">
+    <h2>✅ Validare manuală (10% din setul de test)</h2>
+    <p class="hint" style="margin-bottom:12px;">Ascultați segmentul și corectați transcrierea automată (pseudo-label Robin). Deciziile se salvează pe server în
+      <code>manifests/validation.jsonl</code>. Doar subsetul validat dă un WER real al modelului.</p>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap;">
+      <span style="font-size:13px;color:var(--muted);" id="valProgress">Niciun set încărcat.</span>
+      <div class="btn-group" style="margin:0;">
+        <button class="btn btn-ghost" id="btnValLoad">📂 Încarcă segmentele de validat</button>
+        <button class="btn btn-ghost" id="btnValApply">💾 Aplică în test.jsonl</button>
+      </div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="valProgressBar" style="width:0%"></div></div>
+    <div id="valCardContainer"></div>
+  </div>
+</div>
+
+<!-- ─── ISTORIC ─────────────────────────────────────── -->
+<div id="tab-history" class="tab-content">
+  <div class="panel">
+    <h2>📋 Transcrieri anterioare (sesiunea curentă)</h2>
+    <table class="history-table">
+      <thead><tr><th>#</th><th>Fișier</th><th>Durată</th><th>Cuvinte</th><th>Motor</th><th>Status</th><th>Ora</th></tr></thead>
+      <tbody id="historyBody"><tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px;">Nicio transcriere efectuată încă.</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ─── SETĂRI ──────────────────────────────────────── -->
+<div id="tab-settings" class="tab-content">
+  <div class="grid">
+    <div class="panel">
+      <h2>🌐 Server de inferență</h2>
+      <div class="input-group"><label for="apiBase">URL server (server.py)</label>
+        <input type="url" id="apiBase" placeholder="http://localhost:8000"/></div>
+      <div class="btn-group" style="margin-top:0;">
+        <button class="btn btn-ghost" id="btnTest">🔌 Testează conexiunea</button>
+        <button class="btn btn-ghost" id="btnCard">📋 Model / Data Card</button>
+      </div>
+      <div class="status-bar" id="apiStatus" role="status"></div>
+      <div class="pre" id="infoBox" style="display:none"></div>
+    </div>
+    <div class="panel">
+      <h2>ℹ️ Despre motoare</h2>
+      <p class="hint"><strong>Model local</strong> — modelul Wav2Vec2 antrenat în această lucrare (<code>asr_project/model_final</code>), încărcat de <code>server.py</code>.</p>
+      <p class="hint" style="margin-top:8px;"><strong>RobinASR</strong> — apelat de <em>server</em>, nu direct din browser (evită restricțiile CORS). Adresa se setează cu variabila
+        <code>ROBIN_API_URL</code> la pornirea serverului (ex. <code>http://localhost:8888/transcribe</code> pentru Docker <code>racai/robinasr:cpu</code>).</p>
+      <p class="hint" style="margin-top:8px;"><strong>Whisper</strong> — model <code>WHISPER_MODEL</code> (implicit <code>openai/whisper-small</code>), util pentru demo când nu există model antrenat sau Robin. Prima cerere durează (încărcarea modelului).</p>
+      <p class="hint" style="margin-top:8px;"><strong>Rusă</strong> — model HuggingFace (<code>RU_MODEL_ID</code>), descărcat la prima utilizare.</p>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script>
+"use strict";
+// ── utilitare ──────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+const defaultBase = location.protocol.startsWith('http') ? location.origin : 'http://localhost:8000';
+const apiBase = () => ($('apiBase').value.trim() || defaultBase).replace(/\/+$/, '');
+
+let currentFile = null, history = [], mediaRecorder = null, recTimerId = null, isRecording = false, lastResult = null;
+
+// ── taburi ─────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
+  $('tab-' + b.dataset.tab).classList.add('active'); b.classList.add('active');
+}));
+
+// ── setări persistente ─────────────────────────────────────────
+$('apiBase').value = store('asr.apiBase') || defaultBase;
+$('engineSel').value = store('asr.engine') || 'auto';
+$('langSel').value = store('asr.lang') || 'ro';
+$('apiBase').addEventListener('change', () => store('asr.apiBase', $('apiBase').value));
+$('engineSel').addEventListener('change', () => store('asr.engine', $('engineSel').value));
+$('langSel').addEventListener('change', () => store('asr.lang', $('langSel').value));
+
+// ── undă animată în antet (decorativ) ──────────────────────────
+(function () {
+  const c = $('headerWave'); if (!c) return; const ctx = c.getContext('2d'); let t = 0;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function draw() {
+    c.width = c.offsetWidth * devicePixelRatio; c.height = c.offsetHeight * devicePixelRatio;
+    ctx.clearRect(0, 0, c.width, c.height); ctx.strokeStyle = 'rgba(56,189,248,0.35)'; ctx.lineWidth = 1.5 * devicePixelRatio;
+    [[12, .012, 0], [8, .022, 1.2], [5, .033, 2.5]].forEach(([a, f, p]) => {
+      ctx.beginPath();
+      for (let x = 0; x <= c.width; x += 2) { const y = c.height / 2 + a * devicePixelRatio * Math.sin(x * f + t + p); x ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+      ctx.stroke();
+    });
+    t += 0.04; if (!reduce) requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ── fișier / drag & drop ───────────────────────────────────────
+const dz = $('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag'); if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]); });
+$('fileInput').addEventListener('change', e => { if (e.target.files[0]) processFile(e.target.files[0]); });
+
+function fmtDur(s) { if (!isFinite(s)) return ''; const m = Math.floor(s / 60), x = Math.floor(s % 60); return `${m}:${String(x).padStart(2, '0')}`; }
+
+function processFile(file) {
+  currentFile = file;
+  $('audioPlayer').src = URL.createObjectURL(file);
+  $('fileName').textContent = file.name;
+  $('fileDur').textContent = '';
+  $('playerArea').classList.add('show');
+  $('btnTranscribe').disabled = false;
+  $('audioPlayer').onloadedmetadata = () => { $('fileDur').textContent = fmtDur($('audioPlayer').duration); };
+  drawWaveform(file);
+  setStatus('info', `Fișier încărcat: ${file.name} (${(file.size / 1048576).toFixed(1)} MB)`);
+}
+
+// Formă de undă REALĂ (decodare în browser); dacă formatul nu poate fi decodat, canvas-ul se ascunde.
+async function drawWaveform(file) {
+  const canvas = $('waveCanvas'); canvas.style.display = 'none';
+  if (file.size > 60 * 1048576) return;
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext; const ac = new Ctx();
+    const buf = await ac.decodeAudioData(await file.arrayBuffer()); ac.close();
+    const data = buf.getChannelData(0), bars = 160, step = Math.floor(data.length / bars) || 1;
+    canvas.style.display = 'block';
+    canvas.width = canvas.offsetWidth * devicePixelRatio; canvas.height = 56 * devicePixelRatio;
+    const g = canvas.getContext('2d'); g.clearRect(0, 0, canvas.width, canvas.height); g.fillStyle = 'rgba(56,189,248,0.8)';
+    const bw = canvas.width / bars;
+    for (let i = 0; i < bars; i++) {
+      let peak = 0; for (let j = 0; j < step; j += 16) peak = Math.max(peak, Math.abs(data[i * step + j] || 0));
+      const h = Math.max(2, peak * canvas.height * 0.95); g.fillRect(i * bw + 1, (canvas.height - h) / 2, Math.max(bw - 2, 1), h);
+    }
+  } catch (e) { /* format nedecodabil în browser: serverul îl poate totuși transcrie */ }
+}
+
+// ── înregistrare din microfon (browserul produce WebM/Opus sau MP4, nu WAV) ──
+$('btnRec').addEventListener('click', async () => {
+  if (!isRecording) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'].find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || '';
+      mediaRecorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      const chunks = []; mediaRecorder.ondataavailable = e => e.data.size && chunks.push(e.data);
+      mediaRecorder.onstop = () => {
+        const type = mediaRecorder.mimeType || mime || 'audio/webm';
+        const ext = type.includes('mp4') ? 'm4a' : type.includes('ogg') ? 'ogg' : 'webm';
+        processFile(new File([new Blob(chunks, { type })], `inregistrare.${ext}`, { type }));
+      };
+      mediaRecorder.start(); isRecording = true; let sec = 0;
+      $('btnRec').textContent = '⏹ Oprire înregistrare'; $('btnRec').style.color = 'var(--error)'; $('recTimer').style.display = 'inline';
+      recTimerId = setInterval(() => { sec++; $('recTimer').textContent = `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`; }, 1000);
+    } catch (e) { setStatus('error', 'Microfon inaccesibil: ' + e.message + ' (necesită https sau localhost)'); }
+  } else {
+    mediaRecorder.stop(); mediaRecorder.stream.getTracks().forEach(t => t.stop()); clearInterval(recTimerId); isRecording = false;
+    $('btnRec').textContent = '⏺ Pornire înregistrare'; $('btnRec').style.color = ''; $('recTimer').style.display = 'none';
+  }
+});
+
+// ── transcriere ────────────────────────────────────────────────
+async function apiError(r) {
+  let d = ''; try { const j = await r.json(); d = typeof j.detail === 'string' ? j.detail : JSON.stringify(j.detail || j); } catch (e) { d = r.statusText; }
+  return new Error(`HTTP ${r.status}: ${d}`);
+}
+
+$('btnTranscribe').addEventListener('click', async () => {
+  if (!currentFile) return;
+  const btn = $('btnTranscribe'); btn.disabled = true; const old = btn.innerHTML;
+  btn.innerHTML = '<div class="spinner"></div> Se procesează...'; setStatus('info', '⏳ Se transcrie (lecțiile lungi pot dura)...');
+  const t0 = performance.now();
+  try {
+    const fd = new FormData();
+    fd.append('file', currentFile, currentFile.name);
+    fd.append('language', $('langSel').value); fd.append('engine', $('engineSel').value);
+    const r = await fetch(apiBase() + '/transcribe', { method: 'POST', body: fd });
+    if (!r.ok) throw await apiError(r);
+    const d = await r.json(); lastResult = d;
+    $('transcriptionBox').value = d.transcription;
+    renderSegments(d.segments || []);
+    const words = d.transcription.trim() ? d.transcription.trim().split(/\s+/).length : 0;
+    $('metWords').textContent = words; $('metRtf').textContent = d.rtf.toFixed(3);
+    $('metWer').textContent = '—'; $('metCer').textContent = '—';
+    setStatus('success', `✅ ${d.duration_audio.toFixed(1)} s audio în ${d.processing_time.toFixed(1)} s · motor: ${d.engine} · ${d.device}`);
+    addHistory(currentFile.name, d.duration_audio, words, d.engine, true);
+    if ($('refBox').value.trim()) score();
+  } catch (e) {
+    const offline = e instanceof TypeError;
+    setStatus('error', '⚠️ ' + (offline ? `Serverul nu răspunde la ${apiBase()}. Porniți-l cu: python server.py` : e.message));
+    addHistory(currentFile.name, 0, 0, '—', false);
+  }
+  btn.disabled = false; btn.innerHTML = old;
+});
+
+function renderSegments(segs) {
+  const box = $('segList');
+  if (!segs.length) { box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  box.innerHTML = segs.map(s => `<div class="seg" data-t="${s.start}"><span class="t">${fmtDur(s.start)}–${fmtDur(s.end)}</span><span>${esc(s.text)}</span></div>`).join('');
+  box.querySelectorAll('.seg').forEach(el => el.addEventListener('click', () => { const a = $('audioPlayer'); a.currentTime = +el.dataset.t; a.play(); }));
+}
+
+// ── WER / CER (în browser, pe text normalizat) ─────────────────
+function norm(s) { return s.toLowerCase().replace(/ş/g, 'ș').replace(/ţ/g, 'ț').replace(/[^a-zăâîșț\s]/g, ' ').replace(/\s+/g, ' ').trim(); }
+function lev(a, b) {
+  const prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    let diag = prev[0]; prev[0] = i;
+    for (let j = 1; j <= b.length; j++) { const tmp = prev[j]; prev[j] = Math.min(prev[j] + 1, prev[j - 1] + 1, diag + (a[i - 1] === b[j - 1] ? 0 : 1)); diag = tmp; }
+  }
+  return prev[b.length];
+}
+function score() {
+  const ref = norm($('refBox').value), hyp = norm($('transcriptionBox').value);
+  if (!ref) { setStatus('error', 'Introduceți textul de referință.'); return; }
+  const rw = ref.split(' '), hw = hyp ? hyp.split(' ') : [];
+  $('metWer').textContent = (100 * lev(rw, hw) / rw.length).toFixed(1) + '%';
+  $('metCer').textContent = (100 * lev([...ref], [...hyp]) / ref.length).toFixed(1) + '%';
+  setStatus('success', 'WER/CER calculate față de textul de referință (normalizat: litere mici, fără punctuație).');
+}
+$('btnScore').addEventListener('click', score);
+
+// ── acțiuni UI ─────────────────────────────────────────────────
+function setStatus(type, msg, id = 'statusBar') { const el = $(id); el.className = 'status-bar show ' + type; el.textContent = msg; }
+$('btnCopy').addEventListener('click', async () => { try { await navigator.clipboard.writeText($('transcriptionBox').value); setStatus('success', '✅ Text copiat.'); } catch (e) { setStatus('error', 'Nu s-a putut copia: ' + e.message); } });
+$('btnTxt').addEventListener('click', () => {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([$('transcriptionBox').value], { type: 'text/plain;charset=utf-8' }));
+  a.download = (currentFile ? currentFile.name.replace(/\.[^.]+$/, '') : 'transcriere') + '.txt'; a.click();
+});
+$('btnClear').addEventListener('click', () => {
+  ['transcriptionBox', 'refBox'].forEach(i => $(i).value = ''); ['metWer', 'metCer', 'metWords', 'metRtf'].forEach(i => $(i).textContent = '—');
+  $('statusBar').className = 'status-bar'; $('segList').style.display = 'none';
+});
+function addHistory(name, dur, words, engine, ok) {
+  const tb = $('historyBody'); if (tb.querySelector('td[colspan]')) tb.innerHTML = '';
+  history.push(1);
+  tb.insertAdjacentHTML('afterbegin', `<tr><td style="color:var(--muted)">${history.length}</td><td title="${esc(name)}">${esc(name.length > 28 ? name.slice(0, 25) + '…' : name)}</td>
+    <td style="font-family:var(--mono)">${ok ? fmtDur(dur) : '—'}</td><td style="font-family:var(--mono)">${words}</td><td>${esc(engine)}</td>
+    <td><span class="badge ${ok ? 'badge-ok' : 'badge-err'}">${ok ? 'OK' : 'Eroare'}</span></td>
+    <td style="color:var(--muted);font-size:12px">${new Date().toLocaleTimeString('ro-RO')}</td></tr>`);
+}
+
+// ── setări: test conexiune / model card ────────────────────────
+$('btnTest').addEventListener('click', async () => {
+  setStatus('info', '⏳ Se testează...', 'apiStatus');
+  try {
+    const r = await fetch(apiBase() + '/health', { signal: AbortSignal.timeout(6000) });
+    if (!r.ok) throw await apiError(r); const h = await r.json();
+    const parts = [`✅ Server OK (v${h.version}, ${h.device})`, h.model_ro_loaded ? 'model RO: încărcat' : 'model RO: LIPSĂ → folosiți engine=robin sau antrenați modelul', h.ffmpeg ? 'ffmpeg: OK' : 'ffmpeg: LIPSĂ'];
+    setStatus(h.model_ro_loaded && h.ffmpeg ? 'success' : 'info', parts.join(' · '), 'apiStatus');
+    const box = $('infoBox'); box.style.display = 'block'; box.textContent = JSON.stringify(h, null, 2);
+  } catch (e) { setStatus('error', '⚠️ Server inaccesibil la ' + apiBase() + ' — porniți: python server.py (' + e.message + ')', 'apiStatus'); }
+});
+$('btnCard').addEventListener('click', async () => {
+  try {
+    const r = await fetch(apiBase() + '/model-card'); if (!r.ok) throw await apiError(r);
+    const c = await r.json(); const box = $('infoBox'); box.style.display = 'block';
+    const lines = [];
+    if (c.data_card) { const s = c.data_card.statistics, sp = c.data_card.splits;
+      lines.push(`DATA CARD ${c.data_card.name} v${c.data_card.version}`, `  înregistrări: ${s.recordings} (${s.recordings_hours} h) · segmente vorbire: ${s.speech_segments} (${s.speech_hours} h)`,
+        `  train/dev/test: ${sp.train.segments}/${sp.dev.segments}/${sp.test.segments} segmente`); }
+    if (c.training) lines.push('', 'ANTRENARE', `  model de bază: ${c.training.base_model}`, `  dev WER: ${c.training.dev_wer} · CER: ${c.training.dev_cer} · ${c.training.train_minutes} min · ${c.training.device}`);
+    if (c.evaluation_test) { const e = c.evaluation_test, f = x => x == null ? 'n/a' : (100 * x).toFixed(1) + '%';
+      lines.push('', 'EVALUARE (test)', `  WER pe subsetul validat manual: ${f(e.validated.wer)} (${e.validated.n} segmente)`, `  WER pe tot testul: ${f(e.overall.wer)} · CER: ${f(e.overall.cer)} · RTF ${e.rtf}`);
+      if (e.warning) lines.push('  ⚠ ' + e.warning); }
+    box.textContent = lines.join('\n') || JSON.stringify(c, null, 2);
+  } catch (e) { setStatus('error', '⚠️ ' + e.message, 'apiStatus'); }
+});
+
+// ── validare manuală (server) ──────────────────────────────────
+let valItems = [], valIdx = 0;
+async function valLoad() {
+  try {
+    const r = await fetch(apiBase() + '/api/manifest/test?selected=true'); if (!r.ok) throw await apiError(r);
+    valItems = await r.json();
+    if (!valItems.length) { $('valProgress').textContent = 'Nu există segmente selectate (rulați pasul split).'; $('valCardContainer').innerHTML = ''; return; }
+    const first = valItems.findIndex(s => !s.decision); valIdx = first < 0 ? valItems.length : first; valRender();
+  } catch (e) { $('valProgress').textContent = '⚠️ ' + (e instanceof TypeError ? 'Server inaccesibil.' : e.message); }
+}
+function valRender() {
+  const done = valItems.filter(s => s.decision).length, cont = $('valCardContainer');
+  $('valProgress').textContent = `Segment ${Math.min(valIdx + 1, valItems.length)} din ${valItems.length} · decizii: ${done}`;
+  $('valProgressBar').style.width = (100 * done / Math.max(valItems.length, 1)) + '%';
+  if (valIdx >= valItems.length) { cont.innerHTML = '<div style="text-align:center;padding:32px;color:var(--success)">🎉 Toate segmentele au decizie. Apăsați „Aplică în test.jsonl".<div class="btn-group" style="justify-content:center"><button class="btn btn-ghost" id="btnValReview">↺ Revizuiește de la început</button></div></div>';
+    $('btnValReview').addEventListener('click', () => { valIdx = 0; valRender(); }); return; }
+  const s = valItems[valIdx], txt = s.decision ? s.decision.text : (s.text_pseudo || s.text || '');
+  cont.innerHTML = `<div class="val-card">
+    <div class="val-header"><div><strong>${esc(s.id)}</strong><span style="color:var(--muted);font-size:12px;margin-left:10px;">${esc(s.source)} · ${(+s.duration).toFixed(1)}s</span></div>
+      <span class="val-badge" style="background:rgba(56,189,248,.15);color:var(--accent)">${s.decision ? esc(s.decision.status) : 'Pseudo-label'}</span></div>
+    <audio controls preload="auto" src="${apiBase()}/api/segment_audio/${encodeURIComponent(s.id)}"></audio>
+    <label for="valText" style="font-size:12px;color:var(--muted);font-weight:600;display:block;margin-bottom:6px;">TEXT (corectați dacă este greșit):</label>
+    <textarea id="valText" class="transcription-box" style="min-height:80px;"></textarea>
+    <div class="btn-group">
+      <button class="btn btn-ghost" data-a="prev">◀ Înapoi</button>
+      <button class="btn btn-success" data-a="ok">✅ Confirmă</button>
+      <button class="btn btn-ghost" data-a="skip">⏭ Sari peste</button>
+      <button class="btn btn-ghost" style="color:var(--error);border-color:var(--error)" data-a="del">🗑 Exclude din test</button>
+    </div></div>`;
+  $('valText').value = txt;
+  cont.querySelectorAll('[data-a]').forEach(b => b.addEventListener('click', () => valAct(b.dataset.a)));
+  const au = cont.querySelector('audio'); au.play().catch(() => {});
+}
+async function valAct(a) {
+  const s = valItems[valIdx];
+  if (a === 'prev') { valIdx = Math.max(0, valIdx - 1); return valRender(); }
+  if (a === 'skip') { valIdx++; return valRender(); }
+  const text = $('valText').value.trim(), orig = (s.text_pseudo || s.text || '').trim();
+  const status = a === 'del' ? 'deleted' : (text.toLowerCase() === orig.toLowerCase() ? 'confirmed' : 'edited');
+  try {
+    const r = await fetch(apiBase() + '/api/validation', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: s.id, status, text }) });
+    if (!r.ok) throw await apiError(r); s.decision = await r.json(); valIdx++; valRender();
+  } catch (e) { $('valProgress').textContent = '⚠️ Nu s-a salvat: ' + e.message; }
+}
+$('btnValLoad').addEventListener('click', valLoad);
+$('btnValApply').addEventListener('click', async () => {
+  try { const r = await fetch(apiBase() + '/api/validation/apply', { method: 'POST' }); if (!r.ok) throw await apiError(r); const c = await r.json();
+    $('valProgress').textContent = `✅ Aplicat în test.jsonl: ${c.confirmed} confirmate, ${c.edited} corectate, ${c.deleted} excluse (din ${c.selected} selectate).`; }
+  catch (e) { $('valProgress').textContent = '⚠️ ' + e.message; }
+});
+</script>
+</body>
+</html>

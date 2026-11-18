@@ -1,0 +1,30 @@
+# Python 3.10+ ; ffmpeg trebuie instalat separat (https://ffmpeg.org)
+# PyTorch: instalați varianta potrivită GPU-ului de pe https://pytorch.org (aici: versiunea implicită)
+torch>=2.2
+torchaudio>=2.2
+transformers>=4.40        # testat pe 5.22 (și compatibil cu 4.x)
+accelerate>=0.30
+jiwer>=3.0
+num2words>=0.5.13
+soundfile>=0.12
+librosa>=0.10
+silero-vad>=5.1           # VAD (modelul vine în pachet, fără descărcare)
+numpy
+pandas
+matplotlib
+requests
+beautifulsoup4
+yt-dlp                    # SRC-01 (YouTube)
+gdown                     # SRC-02 (Google Drive)
+tensorboard               # opțional: curbe de antrenare
+fastapi
+uvicorn
+python-multipart
+pydantic
+# dezvoltare / teste
+pytest
+httpx
+nbformat
+nbconvert
+ipykernel
+playwright                # doar pentru testul interfeței (opțional)
