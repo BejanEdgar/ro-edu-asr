@@ -1,4 +1,4 @@
-# Lab 4 — Modele de recunoaștere a vorbirii (RO-EduASR)
+# Modele de recunoaștere a vorbirii (RO-EduASR)
 
 Pipeline complet: **colectare date → Data Card → preprocesare → train/test + validare manuală → model Wav2Vec2-CTC → antrenare → evaluare → server + interfață web**.
 Strategia, analiza problemei și soluțiile alternative sunt în [`RAPORT.md`](RAPORT.md).
